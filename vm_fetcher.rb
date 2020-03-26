@@ -43,7 +43,8 @@ $LOG.level = Logger::WARN
     response = HTTParty.post("#{@conffile['portal_url']}/auth/token",
       :body => body.to_json,
       :timeout => 10,
-      :headers => { 'Content-Type' => 'application/json' } )
+      :headers => { 'Content-Type' => 'application/json' },
+      :verify => false )
     return response
   end
 
@@ -58,7 +59,8 @@ $LOG.level = Logger::WARN
 
     response = HTTParty.get(url,
       :timeout => 10,
-      :headers => headers )
+      :headers => headers,
+      :verify => false )
     return response
   end
 
@@ -72,7 +74,8 @@ $LOG.level = Logger::WARN
 
     response = HTTParty.get(url,
       :timeout => 10,
-      :headers => headers )
+      :headers => headers,
+      :verify => false )
     return response
   end
 
@@ -86,7 +89,8 @@ $LOG.level = Logger::WARN
 
     response = HTTParty.get(url,
       :timeout => 10,
-      :headers => headers )
+      :headers => headers,
+      :verify => false )
     return response
   end
 
@@ -129,9 +133,9 @@ if @auth_token
       $LOG.warn "Downloading #{msg["id"]} created_at:#{msg["created_at"]} from:#{msg['caller']} to:#{msg["called"]} pages:#{msg["pages"]}"
       faxfile = fetch_fax_payload(msg["id"])
       puts "Reviewing #{msg}"
-      filename = faxfile_name(msg)
+      filename = faxfile_name(msg).gsub!(':', '.')
       puts "saving to #{@conffile['destination_dir']}/#{filename}"
-      file = File.open("#{@conffile['destination_dir']}/#{filename}", 'wb')
+      file = File.open(File.join(@conffile['destination_dir'], filename), 'wb')
       file.write faxfile.body
       file.close
     end
