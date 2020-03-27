@@ -64,21 +64,6 @@ $LOG.level = Logger::WARN
     return response
   end
 
-  def fetch_fax_payload(msgid)
-    url = "#{@conffile['portal_url']}/voicemails/#{msgid}/fax_payload"
-    headers = {}
-    headers[:'Content-Type'] = "application/json"
-    headers[:'Authorization: Bearer'] = @auth_token
-
-    puts headers
-
-    response = HTTParty.get(url,
-      :timeout => 10,
-      :headers => headers,
-      :verify => false )
-    return response
-  end
-
   def fetch_payload(msgtype, msgid)
     if (msgtype == "fax")
       url = "#{@conffile['portal_url']}/voicemails/#{msgid}/fax_payload"
@@ -111,7 +96,26 @@ $LOG.level = Logger::WARN
     return output
   end
 
+  def message_ids
+    file = File.open(File.join('db', 'messageids'), 'r')
+    msgids = file.readlines.map(&:chomp)
+    file.close
+    return msgids
+  end
 
+  def delete_messge(msgid)
+    url = "#{@conffile['portal_url']}/voicemails/#{msgid}"
+
+    headers = {}
+    headers[:'Content-Type'] = "application/json"
+    headers[:'Authorization: Bearer'] = @auth_token
+
+    response = HTTParty.delete(url,
+      :timeout => 10,
+      :headers => headers,
+      :verify => false )
+    return response
+  end
 
 ####################################################################
 ### Main app logic
@@ -136,8 +140,15 @@ if @auth_token
 
   mbx = fetch_messages.parsed_response
   $LOG.warn "Mailbox retrieved, processing #{mbx.count} messages"
+
+  msgids = message_ids
+
   mbx.each do |msg| 
     puts "Reviewing #{msg["id"]}"
+    if msgids.include?(msg["id"])
+      $LOG.warn "Skipping messsage #{msg["id"]}" 
+      next
+    end
     $LOG.warn "Downloading #{msg["id"]} message_type: #{msg["message_type"]} created_at:#{msg["created_at"]} from:#{msg['caller']} to:#{msg["called"]} pages:#{msg["pages"]}"
     payloadfile = fetch_payload(msg["message_type"], msg["id"]) if msg["message_type"] == "fax" or msg["message_type"] == "voicemail"
     puts "Reviewing #{msg}"
@@ -147,6 +158,10 @@ if @auth_token
     file.write payloadfile.body if msg["message_type"] == "fax" or msg["message_type"] == "voicemail"
     file.write msg["message"] if msg["message_type"] == "message"
     file.close
+    if @conffile['delete_messages_after_fetch'] == true
+      $LOG.warn "Deleting message #{msg["id"]}" 
+      delete_messge(msg["id"])
+    end
   end
 
 else
