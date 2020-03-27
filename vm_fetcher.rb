@@ -79,8 +79,12 @@ $LOG.level = Logger::WARN
     return response
   end
 
-  def fetch_voice_payload(msgid)
-    url = "#{@conffile['portal_url']}/voicemails/#{msgid}/voice_payload"
+  def fetch_payload(msgtype, msgid)
+    if (msgtype == "fax")
+      url = "#{@conffile['portal_url']}/voicemails/#{msgid}/fax_payload"
+    elsif (msgtype == "voicemail")
+      url = "#{@conffile['portal_url']}/voicemails/#{msgid}/voice_payload"
+    end
     headers = {}
     headers[:'Content-Type'] = "application/json"
     headers[:'Authorization: Bearer'] = @auth_token
@@ -94,11 +98,16 @@ $LOG.level = Logger::WARN
     return response
   end
 
-  def faxfile_name(msg)
-    file_ext = msg["fax"].split(".").last
+  def file_name(msg)
+    if msg["message_type"] == "message"
+      file_ext = "txt"
+    elsif msg["message_type"] == "fax"
+      file_ext = msg["fax"].split(".").last
+    elsif msg["message_type"] == "voicemail"
+      file_ext = msg["voicemail"].split(".").last
+    end
     file_str = "#{@conffile['destination_filename']}.#{file_ext}"
-    puts file_str
-    output = file_str.gsub("{id}", msg["id"]).gsub("{caller}", msg["caller"]).gsub("{called}", msg["called"]).gsub("{created}", msg["created_at"]).gsub(" ", "_").gsub("{mailbox}", msg["mailbox"]).gsub("{type}", msg["message_type"])
+    output = file_str.gsub("{id}", msg["id"]).gsub("{caller}", msg["caller"]).gsub("{called}", msg["called"]).gsub("{created}", msg["created_at"]).gsub(" ", "_").gsub("{mailbox}", msg["mailbox"]).gsub("{type}", msg["message_type"]).gsub(':', '.')
     return output
   end
 
@@ -128,20 +137,18 @@ if @auth_token
   mbx = fetch_messages.parsed_response
   $LOG.warn "Mailbox retrieved, processing #{mbx.count} messages"
   mbx.each do |msg| 
-    if msg["message_type"] == "fax"
-      puts "Reviewing #{msg["id"]}"
-      $LOG.warn "Downloading #{msg["id"]} created_at:#{msg["created_at"]} from:#{msg['caller']} to:#{msg["called"]} pages:#{msg["pages"]}"
-      faxfile = fetch_fax_payload(msg["id"])
-      puts "Reviewing #{msg}"
-      filename = faxfile_name(msg).gsub!(':', '.')
-      puts "saving to #{@conffile['destination_dir']}/#{filename}"
-      file = File.open(File.join(@conffile['destination_dir'], filename), 'wb')
-      file.write faxfile.body
-      file.close
-    end
+    puts "Reviewing #{msg["id"]}"
+    $LOG.warn "Downloading #{msg["id"]} message_type: #{msg["message_type"]} created_at:#{msg["created_at"]} from:#{msg['caller']} to:#{msg["called"]} pages:#{msg["pages"]}"
+    payloadfile = fetch_payload(msg["message_type"], msg["id"]) if msg["message_type"] == "fax" or msg["message_type"] == "voicemail"
+    puts "Reviewing #{msg}"
+    filename = file_name(msg)
+    puts "saving to #{@conffile['destination_dir']}/#{filename}"
+    file = File.open(File.join(@conffile['destination_dir'], filename), 'wb')
+    file.write payloadfile.body if msg["message_type"] == "fax" or msg["message_type"] == "voicemail"
+    file.write msg["message"] if msg["message_type"] == "message"
+    file.close
   end
-  
-  
+
 else
   $LOG.warn "Authentication failed unable to fetch messages"
   puts "no auth token..stopping"
