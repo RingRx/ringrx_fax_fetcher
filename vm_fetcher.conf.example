@@ -6,6 +6,10 @@ acct_username: acct_username_or_email
 acct_password: acct_pass
 portal_url: https://portal.ringrx.com
 destination_dir: voicemails
+#Only processes the message types listed below so if you only want faxes, remove the others from the array
+message_types: [voicemail, fax, oncall, message]
+#Setting this to true will cause it to re-download messages in the mailbox even if a local version exists. Setting this to false will result in skipping messages that have been handled locally
+message_redownload: false
 # Valid tokens for use in naming are
 # {id} - message id
 # {caller} - caller id number
