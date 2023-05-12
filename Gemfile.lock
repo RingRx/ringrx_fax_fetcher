@@ -1,36 +1,19 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    httmultiparty (0.3.16)
-      httparty (>= 0.7.3)
-      mimemagic
-      multipart-post
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
     json (2.6.3)
     logger (1.5.3)
-    mimemagic (0.4.3)
-      nokogiri (~> 1)
-      rake
     mini_mime (1.1.2)
-    mini_portile2 (2.8.2)
     multi_xml (0.6.0)
-    multipart-post (2.3.0)
-    nokogiri (1.14.4)
-      mini_portile2 (~> 2.8.0)
-      racc (~> 1.4)
-    nokogiri (1.14.4-x64-mingw32)
-      racc (~> 1.4)
-    racc (1.6.2)
-    rake (13.0.6)
 
 PLATFORMS
   ruby
   x64-mingw32
 
 DEPENDENCIES
-  httmultiparty
   httparty
   json
   logger
