@@ -2,6 +2,10 @@
 tempdir: tmp
 logfilerotation: daily
 logfile: fetcher.log
+##Uncomment if you plan to use api key auth
+#api_token: your generated api token
+#api_secret: the secret for your api token
+##comment out if using api key auth
 acct_username: acct_username_or_email
 acct_password: acct_pass
 portal_url: https://portal.ringrx.com
