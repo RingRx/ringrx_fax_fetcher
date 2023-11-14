@@ -14,6 +14,7 @@ destination_dir: voicemails
 message_types: [voicemail, fax, oncall, message]
 #Setting this to true will cause it to re-download messages in the mailbox even if a local version exists. Setting this to false will result in skipping messages that have been handled locally
 message_redownload: false
+message_transcription_to_file: fale
 # Valid tokens for use in naming are
 # {id} - message id
 # {caller} - caller id number

@@ -64,7 +64,7 @@ $LOG.level = Logger::WARN
     puts headers
 
     response = HTTParty.get(url,
-      :timeout => 10,
+      :timeout => 60,
       :headers => headers,
       :verify => false )
     return response
@@ -94,12 +94,28 @@ $LOG.level = Logger::WARN
       file_ext = "txt"
     elsif msg["message_type"] == "fax"
       file_ext = msg["fax"].split(".").last
+    elsif msg["message_type"] == "oncall"
+      file_ext = msg["voicemail"].split(".").last
     elsif msg["message_type"] == "voicemail"
       file_ext = msg["voicemail"].split(".").last
     end
     file_str = "#{@conffile['destination_filename']}.#{file_ext}"
     output = file_str.gsub("{id}", msg["id"]).gsub("{caller}", msg["caller"]).gsub("{called}", msg["called"]).gsub("{created}", msg["created_at"]).gsub(" ", "_").gsub("{mailbox}", msg["mailbox"]).gsub("{type}", msg["message_type"]).gsub(':', '.')
     return output
+  end
+
+  def transcription_file_name(msg)
+    file_str = "#{@conffile['destination_filename']}.txt"
+    output = file_str.gsub("{id}", msg["id"]).gsub("{caller}", msg["caller"]).gsub("{called}", msg["called"]).gsub("{created}", msg["created_at"]).gsub(" ", "_").gsub("{mailbox}", msg["mailbox"]).gsub("{type}", msg["message_type"]).gsub(':', '.')
+    return output
+  end
+
+  def has_transcription?(msg)
+    result = false
+    if msg['transcription'].length > 1
+      result = true
+    end
+    result
   end
 
   def message_ids
@@ -186,9 +202,15 @@ if @auth_token
       filename = file_name(msg)
       puts "saving to #{@conffile['destination_dir']}/#{filename}"
       file = File.open(File.join(@conffile['destination_dir'].to_s, filename), 'wb')
-      file.write payloadfile.body if msg["message_type"] == "fax" or msg["message_type"] == "voicemail"
+      file.write payloadfile.body if msg["message_type"] == "fax" or msg["message_type"] == "voicemail" or msg["message_type"] == "oncall"
       file.write msg["message"] if msg["message_type"] == "message"
       file.close
+      if @conffile['message_transcription_to_file'] == true && has_transcription?(msg)
+        text_filename = transcription_file_name(msg)
+        text_file = File.open(File.join(@conffile['destination_dir'].to_s, text_filename), 'wb')
+        text_file.write msg["transcription"] if msg["message_type"] == "oncall" or msg["message_type"] == "voicemail"
+        text_file.close
+      end
       if @conffile['delete_messages_after_fetch'] == true
         $LOG.warn "Deleting message #{msg["id"]}" 
         delete_messge(msg["id"])
