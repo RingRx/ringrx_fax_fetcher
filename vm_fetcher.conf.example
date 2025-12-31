@@ -1,4 +1,11 @@
 #RingRX voicemail/fax downloader config
+#
+# Usage: vm_fetcher.rb [options]
+#   -c, --config FILE    Path to configuration file (default: ./vm_fetcher.conf)
+#   -h, --help           Show help message
+#
+# Example: vm_fetcher.rb --config /path/to/custom.conf
+#
 tempdir: tmp
 logfilerotation: daily
 logfile: fetcher.log
@@ -9,7 +16,24 @@ logfile: fetcher.log
 acct_username: acct_username_or_email
 acct_password: acct_pass
 portal_url: https://portal.ringrx.com
+
+# Default destination directory (used when no per-folder directory is specified)
 destination_dir: voicemails
+
+# API folders to fetch messages from (optional)
+# Valid folders: inbox, sent, trash, outbox
+# Default is inbox only for backwards compatibility
+message_folders: [inbox]
+# Example: fetch from multiple folders
+#message_folders: [inbox, sent]
+
+# Per-folder destination directories (optional)
+# Useful when you want sent faxes in a different location than received faxes
+#folder_dirs:
+#  inbox: received
+#  sent: sent_items
+#  outbox: pending
+
 #Only processes the message types listed below so if you only want faxes, remove the others from the array
 message_types: [voicemail, fax, oncall, message]
 #Setting this to true will cause it to re-download messages in the mailbox even if a local version exists. Setting this to false will result in skipping messages that have been handled locally
@@ -22,6 +46,7 @@ message_transcription_to_file: false
 # {created} - timestamp the message was created at
 # {mailbox} - the mailbox the message is in
 # {type} - the type of message (voicemail, fax, oncall etc)
+# {folder} - the API folder the message is in (inbox, sent, outbox, trash)
 destination_filename: "{type}_{id}_{caller}_{called}_{created}"
 delete_messages_after_fetch: false
 # DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
